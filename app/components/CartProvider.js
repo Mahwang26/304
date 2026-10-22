@@ -23,9 +23,12 @@ export default function CartProvider({ lineOf, children }) {
   // False until the saved cart has been read, so the first render can't overwrite it.
   const [hydrated, setHydrated] = useState(false);
 
+  // The saved cart can only be read in the browser, after the first render: reading it any
+  // earlier would make the server's HTML and the browser's first render differ.
   useEffect(() => {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from localStorage, see above
       if (Array.isArray(saved)) setItems(saved);
     } catch {}
     setHydrated(true);

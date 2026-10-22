@@ -75,6 +75,7 @@ export default function TankHero({ ranges, callouts }) {
   // skipped for reduced-motion users.
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- the user's motion setting is only known in the browser
       setPhase("done");
       return;
     }

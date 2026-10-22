@@ -46,7 +46,7 @@ function Stage({ tank, drag }) {
   const turntable = useRef();
   const yaw = useRef(0);
   const { camera, size } = useThree();
-  const blob = useMemo(makeBlobTexture, []);
+  const blob = useMemo(() => makeBlobTexture(), []);
   useEffect(() => () => blob.dispose(), [blob]);
   const reducedMotion = useMemo(() => window.matchMedia("(prefers-reduced-motion: reduce)").matches, []);
   const extent = useMemo(() => tankExtent(tank), [tank]);

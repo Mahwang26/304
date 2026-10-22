@@ -167,7 +167,7 @@ function makeCementTextures() {
 }
 
 function CementPad({ position, radius = 2.1, materialRef }) {
-  const { map, alphaMap } = useMemo(makeCementTextures, []);
+  const { map, alphaMap } = useMemo(() => makeCementTextures(), []);
   useEffect(() => () => {
     map.dispose();
     alphaMap.dispose();
@@ -199,8 +199,8 @@ export function PlasticTank({
 }) {
   const geometry = useMemo(() => new THREE.LatheGeometry(plasticProfile(radius, bodyTop, collarR), 128), [radius, bodyTop, collarR]);
   useEffect(() => () => geometry.dispose(), [geometry]);
-  const label = useMemo(makeLabelTexture, []);
-  const sticker = useMemo(makeStickerTexture, []);
+  const label = useMemo(() => makeLabelTexture(), []);
+  const sticker = useMemo(() => makeStickerTexture(), []);
   useEffect(() => () => {
     label.dispose();
     sticker.dispose();
@@ -536,7 +536,7 @@ export function makeBlobTexture() {
 // Two light-independent blob shadows: a small dark contact shadow hugging the base
 // and a wide, faint ambient one that grounds the tank.
 function GroundShadows({ radius, contact, ambient }) {
-  const tex = useMemo(makeBlobTexture, []);
+  const tex = useMemo(() => makeBlobTexture(), []);
   useEffect(() => () => tex.dispose(), [tex]);
   return (
     <>
