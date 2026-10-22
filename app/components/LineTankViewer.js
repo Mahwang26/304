@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { SteelTank, HorizontalSteelTank, HORIZONTAL_TANK_SIZE, makeBlobTexture } from "./TankScene";
+import {
+  SteelTank,
+  HorizontalSteelTank,
+  TowerSteelTank,
+  PlasticTank,
+  HORIZONTAL_TANK_SIZE,
+  TOWER_STAND,
+  makeBlobTexture,
+} from "./TankScene";
 
 const HALF_FOV_TAN = Math.tan((30 / 2) * (Math.PI / 180));
 
@@ -12,8 +20,25 @@ function tankExtent(tank) {
     const { halfWidth, height } = HORIZONTAL_TANK_SIZE;
     return { halfWidth, height, baseYaw: -0.5, sway: 0.2, lift: 0.2, shadow: [halfWidth * 1.25, 1.15] };
   }
+  if (tank.kind === "tower") {
+    const radius = tank.radius ?? 0.8;
+    const halfWidth = Math.max(radius, TOWER_STAND.footR);
+    return { halfWidth, height: TOWER_STAND.height + tank.bodyTop + 0.28, baseYaw: 0, sway: 0.3, lift: 0.16, shadow: [halfWidth * 1.3, halfWidth * 1.3] };
+  }
+  if (tank.kind === "plastic") {
+    const radius = tank.radius ?? 0.85;
+    return { halfWidth: radius, height: (tank.bodyTop ?? 1.95) + 0.55, baseYaw: 0, sway: 0.38, lift: 0.12, shadow: [radius * 1.5, radius * 1.5] };
+  }
   const radius = tank.radius ?? 0.8;
   return { halfWidth: radius, height: tank.bodyTop + 0.28, baseYaw: 0, sway: 0.38, lift: 0.12, shadow: [radius * 1.5, radius * 1.5] };
+}
+
+function TankModel({ tank }) {
+  const { kind, ...shape } = tank;
+  if (kind === "horizontal") return <HorizontalSteelTank />;
+  if (kind === "tower") return <TowerSteelTank {...shape} labelTheta={0} />;
+  if (kind === "plastic") return <PlasticTank {...shape} labelTheta={0} />;
+  return <SteelTank {...shape} labelTheta={0} />;
 }
 
 // Tank on a turntable: sways gently on its own and can be dragged to rotate.
@@ -46,7 +71,7 @@ function Stage({ tank, drag }) {
     // Centered on the origin so the camera and the spotlights aim at mid-height.
     <group position={[0, -extent.height / 2, 0]}>
       <group ref={turntable}>
-        {tank.kind === "horizontal" ? <HorizontalSteelTank /> : <SteelTank {...tank} labelTheta={0} />}
+        <TankModel tank={tank} />
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, 0]} scale={[extent.shadow[0], extent.shadow[1], 1]}>
           <circleGeometry args={[1, 64]} />
           <meshBasicMaterial map={blob} transparent opacity={0.9} depthWrite={false} />

@@ -5,7 +5,8 @@ import Header from "./components/Header";
 import Footer from "./components/Footer";
 import ContactCTA from "./components/ContactCTA";
 import TankHero from "./components/TankHero";
-import { STEEL_LINES } from "./lib/steelLines";
+import { getCatalog } from "./lib/catalog";
+import { capacityRange } from "./lib/format";
 
 const NAV_LINKS = [
   { href: "/plastico", label: "Plástico" },
@@ -14,38 +15,50 @@ const NAV_LINKS = [
   { href: "/#contacto", label: "Contacto" },
 ];
 
-const TANK_IMAGE_SIZE = { classic: [628, 1156], horizonte: [628, 628], fino: [628, 1156] };
+// Card pictures in public/tanks, rendered from each line's 3D tank: [width, height].
+const TANK_IMAGE_SIZE = {
+  classic: [628, 1156],
+  horizonte: [628, 628],
+  fino: [628, 1156],
+  "home-tower": [628, 1156],
+  plast3: [628, 1156],
+  "plast3-xslim": [628, 1156],
+  plast4: [628, 1156],
+  "plast4-xslim": [628, 1156],
+};
 
-function formatRange(models) {
-  const caps = models.map((m) => m.cap);
-  const fmt = (n) => n.toLocaleString("es-AR");
-  return `${fmt(Math.min(...caps))} a ${fmt(Math.max(...caps))} L`;
+// Model cards on the hero close-ups: the lines the site has a one-liner for.
+function calloutItems(lines, basePath) {
+  return lines
+    .filter((l) => l.callout)
+    .map((l) => ({ key: l.key, href: `${basePath}/${l.key}`, name: l.name, range: capacityRange(l.models, " – "), desc: l.callout }));
 }
 
-// One rounded-square card per steel line; each opens that line's page.
-function SteelSection() {
+// A material's section: one rounded-square card per line that has a picture; each card
+// opens that line's page. `detail` is the small text under the line's name.
+function ModelSection({ id, title, intro, lines, basePath, altPrefix, detail }) {
   return (
-    <section className="section" id="acero">
+    <section className="section" id={id}>
       <div className="wrap">
         <div className="section-head">
-          <h2>Tanques de Acero Inoxidable</h2>
-          <p>Acero AISI 304 antimagnético, con 40 años de garantía. Elegí un modelo para ver sus capacidades y precios.</p>
+          <h2>{title}</h2>
+          <p>{intro}</p>
         </div>
         <div className="model-grid">
-          {STEEL_LINES.map((line) => {
+          {lines.filter((line) => TANK_IMAGE_SIZE[line.key]).map((line) => {
             const [w, h] = TANK_IMAGE_SIZE[line.key];
             return (
-              <Link key={line.key} href={`/acero/${line.key}`} className="model-card">
+              <Link key={line.key} href={`${basePath}/${line.key}`} className="model-card">
                 <Image
                   src={`/tanks/${line.key}.png`}
-                  alt={`Tanque de acero inoxidable ${line.name}`}
+                  alt={`${altPrefix} ${line.name}`}
                   width={w}
                   height={h}
                   sizes="(max-width: 820px) 70vw, 300px"
                 />
                 <span className="model-card-text">
                   <strong>{line.name}</strong>
-                  <small>{formatRange(line.models)}</small>
+                  <small>{detail(line)}</small>
                 </span>
                 <span className="model-card-cta">
                   Ver modelos <ArrowRight size={15} weight="bold" aria-hidden="true" />
@@ -53,19 +66,6 @@ function SteelSection() {
               </Link>
             );
           })}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-// Heading only for now: the plastic models will be added here later.
-function PlasticSection() {
-  return (
-    <section className="section" id="plastico">
-      <div className="wrap">
-        <div className="section-head">
-          <h2>Tanques de Plástico</h2>
         </div>
       </div>
     </section>
@@ -129,13 +129,35 @@ function HowToBuy() {
   );
 }
 
-export default function Home() {
+export default async function Home() {
+  const { steel, plastic } = await getCatalog();
+  const ranges = {
+    acero: capacityRange(steel.flatMap((l) => l.models)),
+    plastico: capacityRange(plastic.flatMap((l) => l.models)),
+  };
+  const callouts = { acero: calloutItems(steel, "/acero"), plastico: calloutItems(plastic, "/plastico") };
   return (
     <div className="home-dark">
       <Header navLinks={NAV_LINKS} />
-      <TankHero />
-      <SteelSection />
-      <PlasticSection />
+      <TankHero ranges={ranges} callouts={callouts} />
+      <ModelSection
+        id="acero"
+        title="Tanques de Acero Inoxidable"
+        intro="Acero AISI 304 antimagnético, con 40 años de garantía. Elegí un modelo para ver sus capacidades y precios."
+        lines={steel}
+        basePath="/acero"
+        altPrefix="Tanque de acero inoxidable"
+        detail={(line) => capacityRange(line.models)}
+      />
+      <ModelSection
+        id="plastico"
+        title="Tanques de Plástico"
+        intro="Polietileno tricapa y cuatricapa, con 10 años de garantía. Elegí un modelo para ver sus capacidades y precios."
+        lines={plastic}
+        basePath="/plastico"
+        altPrefix="Tanque de plástico"
+        detail={(line) => `${line.quality} · ${capacityRange(line.models)}`}
+      />
       <Features />
       <HowToBuy />
       <ContactCTA />

@@ -37,7 +37,8 @@ function Spotlight() {
 
 const INTRO_SECONDS = 3.4;
 
-export default function TankHero() {
+// `ranges` and `callouts` come from the catalog, per tank: { acero, plastico }.
+export default function TankHero({ ranges, callouts }) {
   const router = useRouter();
   const plasticoLabel = useRef(null);
   const aceroLabel = useRef(null);
@@ -199,8 +200,10 @@ export default function TankHero() {
         onFocus={() => intro.current.progress >= 1 && setFocus("plastico")}
       >
         <strong>Plástico</strong>
-        <small>Polietileno · 300 a 3.300 L</small>
+        <small>Polietileno · {ranges.plastico}</small>
       </Link>
+      {/* Each set follows its tank's label in the DOM so Tab goes label → its callout cards. */}
+      <FocusCallouts id="plastico" items={callouts.plastico} settled={settled} />
       <Link
         href="/#acero"
         ref={aceroLabel}
@@ -208,11 +211,9 @@ export default function TankHero() {
         onFocus={() => intro.current.progress >= 1 && setFocus("acero")}
       >
         <strong>Acero inoxidable</strong>
-        <small>AISI 304 · 75 a 10.000 L</small>
+        <small>AISI 304 · {ranges.acero}</small>
       </Link>
-
-      {/* After the steel label in the DOM so Tab goes label → its callout cards. */}
-      <FocusCallouts settled={settled} />
+      <FocusCallouts id="acero" items={callouts.acero} settled={settled} />
     </section>
   );
 }

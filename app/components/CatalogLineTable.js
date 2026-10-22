@@ -1,7 +1,41 @@
-import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
+"use client";
+
+import { useEffect, useState } from "react";
+import { useCart } from "./CartProvider";
+import QuantityStepper from "./QuantityStepper";
 import { formatARS } from "../lib/format";
 
-export default function CatalogLineTable({ line, addedIds, onAdd, showHeading = true }) {
+// Choose how many, then add them to the cart (on top of what is already there).
+function AddToCart({ model, name }) {
+  const { qtyOf, setQty } = useCart();
+  const [qty, setLocalQty] = useState(1);
+  const [added, setAdded] = useState(false);
+
+  useEffect(() => {
+    if (!added) return;
+    const t = setTimeout(() => setAdded(false), 1600);
+    return () => clearTimeout(t);
+  }, [added]);
+
+  const add = () => {
+    setQty(model.id, qtyOf(model.id) + qty, { name, cap: model.cap, price: model.price });
+    setLocalQty(1);
+    setAdded(true);
+  };
+
+  return (
+    <span className="add-to-cart">
+      <QuantityStepper qty={qty} name={name} onChange={setLocalQty} removable={false} />
+      <button className={`add-btn${added ? " added" : ""}`} onClick={add} aria-label={`Agregar ${qty} ${name} al carrito`}>
+        {added ? "Agregado" : "Agregar"}
+      </button>
+    </span>
+  );
+}
+
+// A line's models with their sizes and prices. The last column picks a quantity and
+// adds the model to the cart.
+export default function CatalogLineTable({ line, showHeading = true }) {
   const horizontal = line.shape === "horizontal";
   return (
     <div className="line-section" id={line.key}>
@@ -37,11 +71,10 @@ export default function CatalogLineTable({ line, addedIds, onAdd, showHeading = 
           </thead>
           <tbody>
             {line.models.map((m) => {
-              const key = `${line.key}-${m.model}`;
-              const added = addedIds.includes(key);
+              const name = `${line.name} ${m.model}`;
               return (
-                <tr key={key}>
-                  <td>{line.name} {m.model}</td>
+                <tr key={m.id}>
+                  <td>{name}</td>
                   {line.quality && <td>{line.quality}</td>}
                   <td>{m.cap.toLocaleString("es-AR")} L</td>
                   {horizontal ? (
@@ -58,16 +91,8 @@ export default function CatalogLineTable({ line, addedIds, onAdd, showHeading = 
                   )}
                   <td>{m.outlet}</td>
                   <td className="price-cell">{formatARS(m.price)}</td>
-                  <td>
-                    <button className={"add-btn" + (added ? " added" : "")} onClick={() => onAdd(key)}>
-                      {added ? (
-                        <>
-                          Agregado <CheckCircle size={16} weight="bold" aria-hidden="true" />
-                        </>
-                      ) : (
-                        "Agregar"
-                      )}
-                    </button>
+                  <td className="cart-cell">
+                    <AddToCart model={m} name={name} />
                   </td>
                 </tr>
               );

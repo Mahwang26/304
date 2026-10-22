@@ -15,25 +15,26 @@ const PLASTIC_COLLAR_R = 0.5;
 const PLASTIC_COLLAR_TOP = 2.4;
 
 // Smooth rotomolded tank: rounded foot, straight wall, sloped shoulder and a raised collar for the lid.
-function plasticProfile() {
+function plasticProfile(radius = PLASTIC_R, bodyTop = PLASTIC_BODY_TOP, collarR = PLASTIC_COLLAR_R) {
+  const collarTop = bodyTop + PLASTIC_COLLAR_TOP - PLASTIC_BODY_TOP;
   const pts = [new THREE.Vector2(0, 0)];
   const foot = 0.07;
   for (let i = 0; i <= 10; i++) {
     const a = (i / 10) * (Math.PI / 2);
-    pts.push(new THREE.Vector2(PLASTIC_R - foot + foot * Math.sin(a), foot - foot * Math.cos(a)));
+    pts.push(new THREE.Vector2(radius - foot + foot * Math.sin(a), foot - foot * Math.cos(a)));
   }
-  pts.push(new THREE.Vector2(PLASTIC_R, PLASTIC_BODY_TOP));
+  pts.push(new THREE.Vector2(radius, bodyTop));
   for (let i = 1; i <= 24; i++) {
     const t = i / 24;
     const ease = Math.sin((t * Math.PI) / 2);
-    pts.push(new THREE.Vector2(PLASTIC_R - (PLASTIC_R - PLASTIC_COLLAR_R - 0.02) * t, PLASTIC_BODY_TOP + 0.3 * ease));
+    pts.push(new THREE.Vector2(radius - (radius - collarR - 0.02) * t, bodyTop + 0.3 * ease));
   }
-  pts.push(new THREE.Vector2(PLASTIC_COLLAR_R + 0.02, PLASTIC_BODY_TOP + 0.3));
-  pts.push(new THREE.Vector2(PLASTIC_COLLAR_R, PLASTIC_BODY_TOP + 0.32));
-  pts.push(new THREE.Vector2(PLASTIC_COLLAR_R, PLASTIC_COLLAR_TOP));
-  pts.push(new THREE.Vector2(PLASTIC_COLLAR_R - 0.07, PLASTIC_COLLAR_TOP));
-  pts.push(new THREE.Vector2(PLASTIC_COLLAR_R - 0.07, PLASTIC_COLLAR_TOP - 0.04));
-  pts.push(new THREE.Vector2(0, PLASTIC_COLLAR_TOP - 0.04));
+  pts.push(new THREE.Vector2(collarR + 0.02, bodyTop + 0.3));
+  pts.push(new THREE.Vector2(collarR, bodyTop + 0.32));
+  pts.push(new THREE.Vector2(collarR, collarTop));
+  pts.push(new THREE.Vector2(collarR - 0.07, collarTop));
+  pts.push(new THREE.Vector2(collarR - 0.07, collarTop - 0.04));
+  pts.push(new THREE.Vector2(0, collarTop - 0.04));
   return pts;
 }
 
@@ -58,8 +59,20 @@ const STEEL_BODY_TOP = 1.9;
 const STEEL_BANDS = [0.2, 0.57, 0.94, 1.31, 1.68];
 
 // Flat-bottomed domestic tank: straight wall with pairs of rolled ridges, rolled rim and shallow dome.
-function steelProfile(radius = STEEL_R, bodyTop = STEEL_BODY_TOP, bands = STEEL_BANDS) {
-  const pts = [new THREE.Vector2(0, 0), new THREE.Vector2(radius - 0.03, 0), new THREE.Vector2(radius, 0.03)];
+// `roundBottom` swaps the flat base for a dished one that hangs below y = 0, shaped like
+// the top's shoulder: for tanks that stand on legs instead of on the floor.
+function steelProfile(radius = STEEL_R, bodyTop = STEEL_BODY_TOP, bands = STEEL_BANDS, roundBottom = false) {
+  const pts = [];
+  if (roundBottom) {
+    pts.push(new THREE.Vector2(0, -0.215));
+    for (let i = 20; i >= 1; i--) {
+      const a = (i / 20) * (Math.PI / 2);
+      pts.push(new THREE.Vector2(radius - 0.3 + 0.3 * Math.cos(a), -0.045 - 0.17 * Math.sin(a)));
+    }
+    pts.push(new THREE.Vector2(radius, -0.045), new THREE.Vector2(radius + 0.012, -0.02), new THREE.Vector2(radius, 0.03));
+  } else {
+    pts.push(new THREE.Vector2(0, 0), new THREE.Vector2(radius - 0.03, 0), new THREE.Vector2(radius, 0.03));
+  }
   const ridge = (y) =>
     bands.reduce((sum, c) => {
       const a = Math.exp(-(((y - (c - 0.035)) / 0.011) ** 2));
@@ -174,8 +187,18 @@ function CementPad({ position, radius = 2.1, materialRef }) {
   );
 }
 
-function PlasticTank(props) {
-  const geometry = useMemo(() => new THREE.LatheGeometry(plasticProfile(), 128), []);
+// Proportions are configurable so catalog pages can show the narrow (XSlim) variant.
+// `labelTheta` is the angle the printed logo faces (0 = straight at +z).
+export function PlasticTank({
+  radius = PLASTIC_R,
+  bodyTop = PLASTIC_BODY_TOP,
+  collarR = PLASTIC_COLLAR_R,
+  labelHeight = 0.42,
+  labelTheta = 0.05,
+  ...props
+}) {
+  const geometry = useMemo(() => new THREE.LatheGeometry(plasticProfile(radius, bodyTop, collarR), 128), [radius, bodyTop, collarR]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   const label = useMemo(makeLabelTexture, []);
   const sticker = useMemo(makeStickerTexture, []);
   useEffect(() => () => {
@@ -183,7 +206,11 @@ function PlasticTank(props) {
     sticker.dispose();
   }, [label, sticker]);
   const cream = { color: "#efe5c6", roughness: 0.5, metalness: 0 };
-  const lidY = PLASTIC_COLLAR_TOP - 0.04;
+  const collarTop = bodyTop + PLASTIC_COLLAR_TOP - PLASTIC_BODY_TOP;
+  const lidY = collarTop - 0.04;
+  const lidR = collarR - 0.08;
+  const labelArc = (labelHeight * LABEL_ASPECT) / radius;
+  const stickerArc = 0.1275 / radius;
   return (
     <group {...props}>
       <mesh geometry={geometry} castShadow receiveShadow>
@@ -191,44 +218,46 @@ function PlasticTank(props) {
       </mesh>
 
       <mesh position={[0, lidY + 0.03, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.42, 0.43, 0.06, 64]} />
+        <cylinderGeometry args={[lidR, lidR + 0.01, 0.06, 64]} />
         <meshStandardMaterial color="#1b1b1b" roughness={0.55} />
       </mesh>
       <mesh position={[0, lidY + 0.075, 0]} castShadow>
-        <cylinderGeometry args={[0.1, 0.12, 0.03, 32]} />
+        <cylinderGeometry args={[lidR * 0.24, lidR * 0.29, 0.03, 32]} />
         <meshStandardMaterial color="#141414" roughness={0.5} />
       </mesh>
       {[0, 1, 2, 3].map((i) => {
         const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
         return (
-          <mesh key={i} position={[Math.sin(a) * 0.26, lidY + 0.08, Math.cos(a) * 0.26]} rotation={[0, a, 0]} castShadow>
-            <boxGeometry args={[0.035, 0.035, 0.2]} />
+          <mesh key={i} position={[Math.sin(a) * lidR * 0.62, lidY + 0.08, Math.cos(a) * lidR * 0.62]} rotation={[0, a, 0]} castShadow>
+            <boxGeometry args={[0.035, 0.035, lidR * 0.48]} />
             <meshStandardMaterial color="#111111" roughness={0.5} />
           </mesh>
         );
       })}
 
       <group rotation={[0, 2.3, 0]}>
-        <mesh position={[0, PLASTIC_BODY_TOP + 0.24, 0.6]} castShadow receiveShadow>
+        <mesh position={[0, bodyTop + 0.24, collarR + 0.1]} castShadow receiveShadow>
           <boxGeometry args={[0.2, 0.24, 0.14]} />
           <meshStandardMaterial {...cream} />
         </mesh>
       </group>
       <group rotation={[0, -0.45, 0]}>
-        <mesh position={[0, PLASTIC_COLLAR_TOP - 0.05, PLASTIC_COLLAR_R + 0.002]} rotation={[Math.PI / 2, 0, 0]}>
+        <mesh position={[0, collarTop - 0.05, collarR + 0.002]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.018, 0.018, 0.01, 16]} />
           <meshStandardMaterial color="#222222" roughness={0.8} />
         </mesh>
       </group>
 
-      <mesh position={[0, 1.42, 0]}>
+      <mesh position={[0, bodyTop - 0.53, 0]}>
         <cylinderGeometry
-          args={[PLASTIC_R + 0.004, PLASTIC_R + 0.004, 0.42, 64, 1, true, -0.45, (0.42 * LABEL_ASPECT) / PLASTIC_R]}
+          args={[radius + 0.004, radius + 0.004, labelHeight, 64, 1, true, labelTheta - labelArc / 2, labelArc]}
         />
         <meshStandardMaterial map={label} alphaTest={0.5} roughness={0.5} />
       </mesh>
-      <mesh position={[0, 1.8, 0]}>
-        <cylinderGeometry args={[PLASTIC_R + 0.004, PLASTIC_R + 0.004, 0.19, 24, 1, true, -0.12, 0.15]} />
+      <mesh position={[0, bodyTop - 0.15, 0]}>
+        <cylinderGeometry
+          args={[radius + 0.004, radius + 0.004, 0.19, 24, 1, true, labelTheta - labelArc / 2 + labelArc * 0.33, stickerArc]}
+        />
         <meshStandardMaterial map={sticker} roughness={0.6} />
       </mesh>
     </group>
@@ -245,9 +274,13 @@ export function SteelTank({
   labelBand = 2,
   labelTheta = -0.03,
   labelOffsetY = 0,
+  roundBottom = false,
   ...props
 }) {
-  const geometry = useMemo(() => new THREE.LatheGeometry(steelProfile(radius, bodyTop, bands), 160), [radius, bodyTop, bands]);
+  const geometry = useMemo(
+    () => new THREE.LatheGeometry(steelProfile(radius, bodyTop, bands, roundBottom), 160),
+    [radius, bodyTop, bands, roundBottom]
+  );
   useEffect(() => () => geometry.dispose(), [geometry]);
   const label = useMemo(() => makeLabelTexture(true), []);
   useEffect(() => () => label.dispose(), [label]);
@@ -315,6 +348,78 @@ function rampAfter(e, from) {
 
 const RIM_MAX = 170;
 const RIM_POSITION = [-2.4, 4.4, -2.8];
+
+// Tower line: a short, round-bottomed steel tank raised on three hairpin ("V") legs. Each
+// leg is two arms that leave the tank's lower rim at separate points and meet in a rounded
+// tip on the floor. Neighbouring legs are tied by a brace between the arms that face each other.
+export const TOWER_STAND = { height: 1.05, footR: 1.04 };
+const TOWER_LEG_ANGLES = [Math.PI / 3, Math.PI, (5 * Math.PI) / 3]; // from +z: front-right, back, front-left
+const TOWER_ARM_SPREAD = 0.4; // radians between a leg's center line and each of its arms
+const TOWER_BRACE_Y = 0.56; // fraction of the stand height where the braces sit
+
+const onCircle = (angle, r, y) => new THREE.Vector3(Math.sin(angle) * r, y, Math.cos(angle) * r);
+
+export function TowerSteelTank({ radius = STEEL_R, ...tank }) {
+  const env = useStudioEnvMap();
+  const metal = { color: "#c9ced3", roughness: 0.3, metalness: 1, envMap: env, envMapIntensity: 0.5 };
+  const { height: h, footR } = TOWER_STAND;
+
+  const { legGeometries, braces } = useMemo(() => {
+    const tube = 0.027;
+    // Each arm runs from the tank's lower rim down to the leg's foot.
+    const legs = TOWER_LEG_ANGLES.map((angle) => {
+      const foot = onCircle(angle, footR, tube);
+      const arms = [-1, 1].map((side) => onCircle(angle + side * TOWER_ARM_SPREAD, radius + 0.004, h - 0.03));
+      return { foot, arms };
+    });
+    const legGeometries = legs.map(({ foot, arms: [a, b] }) => {
+      const path = new THREE.CurvePath();
+      const nearA = foot.clone().lerp(a, 0.09);
+      const nearB = foot.clone().lerp(b, 0.09);
+      path.add(new THREE.LineCurve3(a, nearA));
+      path.add(new THREE.QuadraticBezierCurve3(nearA, foot, nearB));
+      path.add(new THREE.LineCurve3(nearB, b));
+      return new THREE.TubeGeometry(path, 96, tube, 12, false);
+    });
+    // Point of an arm at the brace height.
+    const atBrace = (leg, armIndex) => {
+      const top = leg.arms[armIndex];
+      const y = h * TOWER_BRACE_Y;
+      return leg.foot.clone().lerp(top, (y - leg.foot.y) / (top.y - leg.foot.y));
+    };
+    // Arm 1 of each leg faces arm 0 of the next one around the tank.
+    const braces = legs.map((leg, i) => {
+      const from = atBrace(leg, 1);
+      const to = atBrace(legs[(i + 1) % legs.length], 0);
+      const dir = to.clone().sub(from);
+      return {
+        mid: from.clone().add(to).multiplyScalar(0.5),
+        length: dir.length(),
+        quat: new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.normalize()),
+      };
+    });
+    return { legGeometries, braces };
+  }, [h, footR, radius]);
+  useEffect(() => () => legGeometries.forEach((g) => g.dispose()), [legGeometries]);
+
+  return (
+    <group>
+      {legGeometries.map((geometry, i) => (
+        <mesh key={i} geometry={geometry} castShadow>
+          <meshStandardMaterial {...metal} />
+        </mesh>
+      ))}
+      {braces.map((b, i) => (
+        <mesh key={i} position={b.mid} quaternion={b.quat} castShadow>
+          <cylinderGeometry args={[0.016, 0.016, b.length, 12]} />
+          <meshStandardMaterial {...metal} />
+        </mesh>
+      ))}
+
+      <SteelTank radius={radius} {...tank} roundBottom position={[0, h, 0]} />
+    </group>
+  );
+}
 
 // Horizontal tank on its support frame (Horizonte line). The shell is a lathe around the
 // tank's long axis, laid on its side: inside the rotated group, local +Y runs along the
@@ -646,7 +751,7 @@ const FOCUS_ZOOM_RATE = 2.2;
 // How close (world units) the camera must get to the close-up pose to count as settled.
 const SETTLE_EPSILON = 0.04;
 // Tank-body heights of the callout anchors, top to bottom (one per model card).
-const CALLOUT_HEIGHTS = [1.5, 0.95, 0.4];
+const CALLOUT_HEIGHTS = { acero: [1.62, 1.2, 0.78, 0.36], plastico: [1.62, 1.2, 0.78, 0.36] };
 
 // Final framing adapts to the viewport. While the intro runs, the camera starts between
 // the tanks and pulls back to that framing on the cinematic curve. Afterwards it eases
@@ -772,7 +877,7 @@ function ResponsiveCamera({ intro, focus, onIntroStart, onIntroProgress, onSettl
         const x = plastic ? -tankX : tankX;
         const r = plastic ? PLASTIC_R : STEEL_R;
         const side = plastic ? -1 : 1; // callouts sit on the empty side of the frame
-        const points = CALLOUT_HEIGHTS.map((h) => new THREE.Vector3(x + side * r * 0.8, h, r * 0.6));
+        const points = CALLOUT_HEIGHTS[resting].map((h) => new THREE.Vector3(x + side * r * 0.8, h, r * 0.6));
         anchors = points.map((p) => {
           p.project(camera);
           return [((p.x + 1) / 2) * size.width, ((1 - p.y) / 2) * size.height];
