@@ -159,7 +159,11 @@ Recorrido manual antes de publicar, con las DevTools del navegador (F12):
    - En *Cookies*, `sb-…-auth-token` es la sesión. Si la borrás y recargás `/admin`, te tiene que mandar al login.
 4. **Permisos**: con una cuenta de cliente, entrar a `/admin` muestra "No tenés permiso" (status 403 en Network).
 5. **Celular**: con *Toggle device toolbar* (Ctrl+Shift+M) en 390 px de ancho no tiene que haber scroll horizontal.
-6. **Pago de prueba**: con credenciales de prueba de Mercado Pago, en una ventana de incógnito con la cuenta de comprador de prueba, pagar con la tarjeta `5031 7557 3453 0604`, vencimiento 11/30, código 123 y titular `APRO`. El pedido tiene que figurar "Pagado" en Mi cuenta y en el panel.
+6. **Pago de prueba** (con credenciales de un vendedor de prueba):
+   - En Mercado Pago elegir **"Ingresar con mi cuenta"** con la cuenta de **comprador de prueba** (`TESTUSER…`). Pagar como invitado o con una cuenta real falla con "No pudimos procesar tu pago".
+   - Usar una ventana normal: en incógnito Chrome bloquea cookies de terceros y el botón Pagar queda deshabilitado.
+   - Tarjeta `4509 9535 6623 3704` (Visa) o `5031 7557 3453 0604` (Mastercard), vencimiento 11/30, código 123, titular `APRO` para que se apruebe (`OTHE` para que se rechace).
+   - El pedido tiene que figurar "Pagado" en Mi cuenta y en el panel. Así se verificó el 23/10/2026: pedido N.º 3, pago 184616807653, registrado por el aviso de Mercado Pago un segundo después de pagar.
 
 Para depurar el servidor (Route Handlers, `proxy.js`), los `console.error` aparecen en la terminal de
 `npm run dev` y, en producción, en Vercel → Logs.
