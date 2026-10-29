@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { ArrowLeft, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { ArrowLeft, ArrowRight, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import Header from "./Header";
 import Footer from "./Footer";
 import ContactCTA from "./ContactCTA";
@@ -25,8 +25,8 @@ export function LineTabs({ tabs, label }) {
 
 // Dark presentation page for a line with `showcase` data: 3D tank on the left;
 // title, description, warranty note and the models table on the right.
-// `label` is an optional card shown under the tank (after the models table on small screens).
-export default function LineShowcase({ line, kicker, tabs, tabsLabel, navLinks, label }) {
+// `installHref`: the page with how to install this kind of tank, linked under the tank.
+export default function LineShowcase({ line, kicker, tabs, tabsLabel, navLinks, installHref }) {
   const { lead, note, chips, tank } = line.showcase;
   return (
     <div className="home-dark line-dark">
@@ -38,10 +38,15 @@ export default function LineShowcase({ line, kicker, tabs, tabsLabel, navLinks, 
           </Link>
           <LineTabs tabs={tabs} label={tabsLabel} />
         </div>
-        <div className={"line-showcase" + (label ? " line-showcase--label" : "")}>
+        <div className="line-showcase">
           <div className="line-visual">
             <LineTankViewer tank={tank} />
             <p className="line-visual-hint" aria-hidden="true">Arrastrá para girar el tanque</p>
+            {installHref && (
+              <Link className="line-install-link" href={installHref}>
+                Cómo se coloca este tanque <ArrowRight size={15} weight="bold" aria-hidden="true" />
+              </Link>
+            )}
           </div>
           <div className="line-info">
             <p className="line-kicker">{kicker}</p>
@@ -62,7 +67,6 @@ export default function LineShowcase({ line, kicker, tabs, tabsLabel, navLinks, 
             <CatalogLineTable line={line} showHeading={false} />
             <ContactCTA inline />
           </div>
-          {label}
         </div>
       </main>
       <Footer />

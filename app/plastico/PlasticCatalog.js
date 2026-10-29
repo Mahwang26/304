@@ -7,7 +7,6 @@ import Footer from "../components/Footer";
 import ContactCTA from "../components/ContactCTA";
 import CatalogLineTable from "../components/CatalogLineTable";
 import LineShowcase, { LineTabs } from "../components/LineShowcase";
-import InstallLabel from "../components/InstallLabel";
 import { PLASTIC_GROUP_INTROS } from "../lib/plasticPresentation";
 
 const NAV_LINKS = [
@@ -48,7 +47,7 @@ export default function PlasticCatalog({ lines, lineKey }) {
         tabs={tabs}
         tabsLabel="Líneas de plástico"
         navLinks={NAV_LINKS}
-        label={<InstallLabel />}
+        installHref="/colocacion/plastico"
       />
     );
   }

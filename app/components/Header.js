@@ -22,6 +22,8 @@ export default function Header({ navLinks }) {
                 {l.label}
               </Link>
             ))}
+            {/* On every page: how to install each kind of tank. */}
+            <Link href="/colocacion">Colocación</Link>
           </div>
           {isAdmin && (
             <Link href="/admin" className="account-link">

@@ -7,7 +7,6 @@ import Footer from "../components/Footer";
 import ContactCTA from "../components/ContactCTA";
 import CatalogLineTable from "../components/CatalogLineTable";
 import LineShowcase, { LineTabs } from "../components/LineShowcase";
-import { SteelInstallLabel } from "../components/InstallLabel";
 
 const NAV_LINKS = [
   { href: "/", label: "Inicio" },
@@ -38,7 +37,7 @@ export default function SteelCatalog({ lines, lineKey }) {
         tabs={tabs}
         tabsLabel="Líneas de acero"
         navLinks={NAV_LINKS}
-        label={<SteelInstallLabel />}
+        installHref="/colocacion/acero"
       />
     );
   }
