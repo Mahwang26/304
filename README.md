@@ -70,6 +70,8 @@ npm run dev        # http://localhost:3000
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Clave pública de Supabase (solo puede lo que permite RLS) |
 | `MP_ACCESS_TOKEN` | Access Token de Mercado Pago (solo en el servidor) |
 | `PAYMENTS_SECRET` | Clave que comparte el servidor con la base para registrar pagos |
+| `RESEND_API_KEY` | Clave de Resend, para el mail a 304 cuando se aprueba un pago |
+| `ORDER_NOTIFY_EMAIL` | A quién le llega ese mail (304tanques@gmail.com) |
 | `E2E_ADMIN_EMAIL`, `E2E_ADMIN_PASSWORD` | Solo para los tests: cuenta administradora de prueba |
 
 En Vercel se cargan las mismas variables (menos las de los tests).
@@ -87,8 +89,9 @@ En Supabase → SQL Editor, correr en este orden:
    insert into private.settings (key, value) values ('payments_secret', 'EL-MISMO-VALOR-QUE-PAYMENTS_SECRET')
    on conflict (key) do update set value = excluded.value;
    ```
-6. `supabase/admin.sql`: rol de administrador, `is_admin()` y políticas RLS de escritura.
-7. `supabase/hacer-admin.sql`, con el email de la cuenta que va a administrar (la cuenta se crea antes en `/cuenta`).
+6. `supabase/aviso-pago.sql`: `record_payment` devuelve los datos del pedido la primera vez que se paga, para el mail a 304.
+7. `supabase/admin.sql`: rol de administrador, `is_admin()` y políticas RLS de escritura.
+8. `supabase/hacer-admin.sql`, con el email de la cuenta que va a administrar (la cuenta se crea antes en `/cuenta`).
 
 Además, en Authentication → Sign In / Providers → Email, apagar **Confirm email**: el servicio de mails que
 trae Supabase solo envía a los miembros del proyecto.

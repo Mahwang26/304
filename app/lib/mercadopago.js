@@ -1,4 +1,5 @@
 import "server-only";
+import { sendPaidOrderEmail } from "./orderEmail";
 
 // Mercado Pago (Checkout Pro), from the server only: it uses the account's access token and
 // the payments secret that lets the site record a payment in the database.
@@ -72,7 +73,8 @@ export async function createPreference(order, origin) {
 }
 
 // Reads a payment from Mercado Pago (the only trusted source) and records it on its order.
-// Resolves to { orderId, status }, or null when the payment isn't for one of our orders.
+// The first time an order is paid, 304 gets a mail about it. Resolves to { orderId, status },
+// or null when the payment isn't for one of our orders.
 export async function syncPayment(paymentId) {
   if (!/^\d+$/.test(String(paymentId))) return null;
   const payment = await mp(`/v1/payments/${paymentId}`);
@@ -92,5 +94,12 @@ export async function syncPayment(paymentId) {
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`record_payment ${res.status}: ${await res.text()}`);
-  return { orderId, status: await res.json() };
+  // { status, newly_paid, order? } (supabase/aviso-pago.sql); a plain status before that update.
+  const out = await res.json();
+  const status = typeof out === "string" ? out : out.status;
+  if (out?.newly_paid && out.order) {
+    // A mail that fails must not undo the payment, which is already recorded.
+    await sendPaidOrderEmail(out.order, payment.id).catch((err) => console.error("Aviso de pago por mail:", err));
+  }
+  return { orderId, status };
 }
