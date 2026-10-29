@@ -23,6 +23,11 @@ export default function FocusCallouts({ id, items, settled }) {
   const column = useRef(null);
   const targets = useRef([]);
   const [lines, setLines] = useState([]);
+  // The `settled` value the callouts are switched on for. It lags `active` by two frames, so
+  // freshly computed lines are painted hidden first and then animate in: elements that are
+  // created already "on" (the first close-up, before any lines existed) would just pop up.
+  const [shownFor, setShownFor] = useState(null);
+  const on = active && shownFor === settled;
 
   useLayoutEffect(() => {
     if (!active) return;
@@ -54,10 +59,14 @@ export default function FocusCallouts({ id, items, settled }) {
       })
       .filter(Boolean);
     setLines(next);
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => setShownFor(settled));
+    });
+    return () => cancelAnimationFrame(frame);
   }, [active, settled, side]);
 
   return (
-    <div className={`callouts callouts--${side}` + (active ? " is-on" : "")} aria-hidden={!active}>
+    <div className={`callouts callouts--${side}` + (on ? " is-on" : "")} aria-hidden={!on}>
       <svg className="callout-lines" width="100%" height="100%">
         {lines.map((l, i) => (
           <g key={i} style={{ "--i": i + 1 }}>
@@ -86,7 +95,7 @@ export default function FocusCallouts({ id, items, settled }) {
             className="callout-card"
             ref={(el) => { targets.current[j] = el; }}
             style={{ "--i": j + 1 }}
-            tabIndex={active ? 0 : -1}
+            tabIndex={on ? 0 : -1}
           >
             <span className="callout-card-head">
               <span className="callout-index">{String(j + 1).padStart(2, "0")}</span>
