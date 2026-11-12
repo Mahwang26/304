@@ -19,8 +19,9 @@ export default defineConfig({
   timeout: 60_000,
   expect: { timeout: 15_000 },
   fullyParallel: true,
-  // The dev server compiles each page on first visit: a few browsers at a time keep it responsive.
-  workers: local ? 2 : undefined,
+  // Two browsers at a time: each page runs a WebGL scene, and more than that at once can run
+  // the machine out of memory (and the dev server compiles each page on its first visit).
+  workers: 2,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
