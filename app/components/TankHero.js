@@ -54,6 +54,13 @@ export default function TankHero({ ranges, callouts }) {
   const cssAnims = useRef([]);
   const [phase, setPhase] = useState("pending");
   const section = useRef(null);
+  // Whether the hero is on screen; the 3D scene only renders while it is.
+  const [onScreen, setOnScreen] = useState(true);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => setOnScreen(entry.isIntersecting));
+    observer.observe(section.current);
+    return () => observer.disconnect();
+  }, []);
   // Which tank the camera is zoomed onto ("plastico" | "acero" | null). A ref, not state,
   // so the per-frame scene reads it without re-rendering; mirrored to data-focus for CSS.
   const focus = useRef(null);
@@ -182,6 +189,7 @@ export default function TankHero({ ranges, callouts }) {
           onIntroStart={startCssIntro}
           onIntroProgress={scrubCssIntro}
           onSettle={handleSettle}
+          active={onScreen}
         />
       </div>
       {[plasticoFx, aceroFx].flatMap((fx, i) =>

@@ -976,9 +976,13 @@ export default function TankScene({
   onIntroStart,
   onIntroProgress,
   onSettle,
+  active = true,
 }) {
   return (
     <Canvas
+      // `active` is false while the hero is scrolled out of view: the scene stops drawing
+      // frames, so it doesn't take time from scrolling the rest of the page.
+      frameloop={active ? "always" : "never"}
       onPointerMissed={() => onFocus(null)}
       shadows="variance"
       dpr={[1, 2]}
