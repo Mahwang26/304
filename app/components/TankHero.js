@@ -60,6 +60,23 @@ export default function TankHero({ ranges, callouts }) {
 
   // Set once the camera has finished zooming onto a tank: { id, anchors } or null.
   const [settled, setSettled] = useState(null);
+  // Where a tank leads. A section of this same page ("/#acero") is scrolled to directly:
+  // pushing a hash the address already has would do nothing, so a second click (or one after
+  // arriving from the "Acero Inoxidable" link) would stay put.
+  const goTo = useCallback(
+    (href) => {
+      const section = href.startsWith("/#") ? document.getElementById(href.slice(2)) : null;
+      if (!section) {
+        router.push(href);
+        return;
+      }
+      const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      section.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+      history.replaceState(history.state, "", href);
+    },
+    [router]
+  );
+
   const handleSettle = useCallback((id, anchors) => {
     setSettled(id ? { id, anchors } : null);
   }, []);
@@ -158,7 +175,7 @@ export default function TankHero({ ranges, callouts }) {
         <TankScene
           labels={{ plastico: plasticoLabel, acero: aceroLabel }}
           lightFx={{ plastico: plasticoFx, acero: aceroFx }}
-          onSelect={(href) => router.push(href)}
+          onSelect={goTo}
           intro={intro}
           focus={focus}
           onFocus={setFocus}
@@ -209,6 +226,10 @@ export default function TankHero({ ranges, callouts }) {
         href="/#acero"
         ref={aceroLabel}
         className="tank-label"
+        onClick={(e) => {
+          e.preventDefault();
+          goTo("/#acero");
+        }}
         onFocus={() => intro.current.progress >= 1 && setFocus("acero")}
       >
         <strong>Acero inoxidable</strong>
