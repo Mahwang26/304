@@ -904,7 +904,7 @@ function Tanks({ labels, lightFx, onSelect, intro, focus, onFocus }) {
         height={PLASTIC_COLLAR_TOP + 0.08}
         radius={PLASTIC_R}
         intro={intro}
-        onSelect={() => onSelect("/plastico")}
+        onSelect={() => onSelect("/#plastico")}
       >
         <PlasticTank />
       </ClickableTank>

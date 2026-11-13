@@ -15,9 +15,10 @@ const NAV_LINKS = [
   { href: "/#contacto", label: "Contacto" },
 ];
 
+// "Todas" is the plastic section of the home page, except on the all-lines page itself.
 function plasticTabs(lines, lineKey) {
   return [
-    { href: "/plastico", label: "Todas", current: !lineKey },
+    { href: lineKey ? "/#plastico" : "/plastico", label: "Todas", current: !lineKey },
     ...lines.map((l) => ({ href: `/plastico/${l.key}`, label: l.name, current: l.key === lineKey })),
   ];
 }

@@ -60,9 +60,9 @@ export default function TankHero({ ranges, callouts }) {
 
   // Set once the camera has finished zooming onto a tank: { id, anchors } or null.
   const [settled, setSettled] = useState(null);
-  // Where a tank leads. A section of this same page ("/#acero") is scrolled to directly:
-  // pushing a hash the address already has would do nothing, so a second click (or one after
-  // arriving from the "Acero Inoxidable" link) would stay put.
+  // Where a tank leads: its section further down this page ("/#acero", "/#plastico"),
+  // scrolled to directly. Pushing a hash the address already has would do nothing, so a
+  // second click (or one after arriving from a menu link) would stay put.
   const goTo = useCallback(
     (href) => {
       const section = href.startsWith("/#") ? document.getElementById(href.slice(2)) : null;
@@ -212,9 +212,13 @@ export default function TankHero({ ranges, callouts }) {
       </p>
 
       <Link
-        href="/plastico"
+        href="/#plastico"
         ref={plasticoLabel}
         className="tank-label"
+        onClick={(e) => {
+          e.preventDefault();
+          goTo("/#plastico");
+        }}
         onFocus={() => intro.current.progress >= 1 && setFocus("plastico")}
       >
         <strong>Plástico</strong>
